@@ -1,57 +1,125 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AMAN — Danger Theme</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
-  <style>
-    :root{
-      --danger:#ff2d2d;
-      --danger-dim:#b91414;
-      --bg:#070707;
-    }
-    html,body{height:100%}
-    body{
-      margin:0;
-      background:
-        radial-gradient(1200px 600px at 50% 120%, rgba(255,45,45,.15), transparent 60%),
-        radial-gradient(600px 300px at 50% -10%, rgba(255,45,45,.12), transparent 60%),
-        linear-gradient(180deg, #0a0a0a, #000);
-      color:var(--danger);
-      display:grid;
-      place-items:center;
-      overflow:hidden;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-    }
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import math
 
-    /* subtle scanlines */
-    .scanlines::before{
-      content:"";
-      position:fixed; inset:0; pointer-events:none;
-      background: repeating-linear-gradient(
-        to bottom, rgba(0,0,0,.25) 0px, rgba(0,0,0,.25) 1px, transparent 2px, transparent 3px
-      );
-      opacity:.5;
-      mix-blend-mode:multiply;
-    }
+# --- Config ---
+W, H = 1200, 600
+bg_color = (12, 16, 23)          # dark background
+accent1 = (235, 138, 52)        # warm accent (for Naga)
+accent2 = (89, 189, 159)        # cool accent (for gradient text)
+text = "Naga Sharanya"
+font_path = None  # or set path to a .ttf file, e.g. "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+base_font_size = 96
 
-    .wrap{ position:relative; text-align:center; }
+# --- Helpers ---
+def linear_gradient(start_color, end_color, width):
+    """Return list of colors forming a horizontal gradient."""
+    return [
+        (
+            int(start_color[0] + (end_color[0] - start_color[0]) * i / (width - 1)),
+            int(start_color[1] + (end_color[1] - start_color[1]) * i / (width - 1)),
+            int(start_color[2] + (end_color[2] - start_color[2]) * i / (width - 1))
+        )
+        for i in range(width)
+    ]
 
-    .logo{
-      font-family:'Orbitron', sans-serif;
-      font-weight:900;
-      letter-spacing:.17em;
-      font-size: clamp(48px, 14vw, 180px);
-      line-height:1;
-      color: var(--danger);
-      text-shadow: 0 0 6px var(--danger), 0 0 24px var(--danger), 0 0 80px rgba(255,45,45,.6);
-      position:relative;
-      user-select:none;
-      filter: drop-shadow(0 15px 35px rgba(255,45,45,.25));
-      animation: pulse 2.2s ease-in-out infinite;
-    }
-    .logo::before, .logo::after{
-      content:attr(data-text);
-      position:absolute; inset:0; pointer-events:none;
-      clip-path: i
+# --- Create canvas ---
+img = Image.new("RGBA", (W, H), bg_color)
+draw = ImageDraw.Draw(img)
+
+# --- Draw circular emblem with snake-like curve ---
+cx, cy = 260, H//2
+radius = 160
+
+# circle base (subtle inner glow)
+draw.ellipse([cx-radius-10, cy-radius-10, cx+radius+10, cy+radius+10], fill=(24,30,36,255))
+draw.ellipse([cx-radius, cy-radius, cx+radius, cy+radius], fill=(18,22,28,255))
+
+# snake body: approximate with arcs composed from many small rotated ellipses
+for i in range(40):
+    t = i / 39.0
+    angle = -120 + 240 * t  # degrees along curve
+    rad = radius * (0.55 + 0.45 * (1 - t))  # taper
+    # position along an S-curve
+    x = cx + int((radius-30) * math.cos(math.radians(180 * t)) * 0.9)
+    y = cy + int((radius-30) * math.sin(math.radians(180 * t)) * 0.6) - int(60 * (t - 0.5))
+    wobble = int(12 * math.sin(5 * t * math.pi))
+    r = int(rad) - i//6
+    # gradient color mixing between accent1 and accent2 along the body
+    mix = (
+        int(accent1[0] * (1 - t) + accent2[0] * t),
+        int(accent1[1] * (1 - t) + accent2[1] * t),
+        int(accent1[2] * (1 - t) + accent2[2] * t),
+        230
+    )
+    draw.ellipse([x-r+wobble, y-r, x+r+wobble, y+r], fill=mix)
+
+# snake head (stylized triangle + eye)
+head_poly = [(cx + radius//2 + 40, cy - 10), (cx + radius//2 + 100, cy - 20), (cx + radius//2 + 40, cy + 30)]
+draw.polygon(head_poly, fill=accent1+(255,))
+# eye
+draw.ellipse([cx + radius//2 + 80, cy - 10, cx + radius//2 + 88, cy - 2], fill=(255,255,255,230))
+
+# subtle highlight on circle
+highlight = Image.new("RGBA", img.size, (0,0,0,0))
+hd = ImageDraw.Draw(highlight)
+hd.ellipse([cx-radius+10, cy-radius+30, cx+radius-20, cy+radius-10], fill=(255,255,255,20))
+img = Image.alpha_composite(img, highlight)
+
+# --- Prepare text gradient image ---
+# load font
+try:
+    if font_path:
+        font = ImageFont.truetype(font_path, base_font_size)
+    else:
+        font = ImageFont.truetype("DejaVuSans-Bold.ttf", base_font_size)
+except Exception:
+    font = ImageFont.load_default()
+
+# compute text size
+tw, th = draw.textsize(text, font=font)
+text_x = 420
+text_y = H//2 - th//2
+
+# create a mask for text
+text_mask = Image.new("L", (tw, th), 0)
+mask_draw = ImageDraw.Draw(text_mask)
+mask_draw.text((0, 0), text, font=font, fill=255)
+
+# create gradient for the text
+grad = Image.new("RGBA", (tw, th))
+gdraw = ImageDraw.Draw(grad)
+colors = linear_gradient(accent2, (255,220,120), tw)
+for i, col in enumerate(colors):
+    gdraw.line([(i, 0), (i, th)], fill=col)
+
+# apply mask
+text_img = Image.new("RGBA", (tw, th), (0,0,0,0))
+text_img.paste(grad, (0,0), text_mask)
+
+# draw subtle text shadow
+shadow = Image.new("RGBA", (tw+8, th+8), (0,0,0,0))
+sd = ImageDraw.Draw(shadow)
+sd.text((4,4), text, font=font, fill=(0,0,0,160))
+img.paste(shadow, (text_x-4, text_y-4), shadow)
+# paste text
+img.paste(text_img, (text_x, text_y), text_img)
+
+# small tagline
+tag = "Elegant • Serpentine • Strong"
+try:
+    tag_font = ImageFont.truetype("DejaVuSans.ttf", 22)
+except Exception:
+    tag_font = ImageFont.load_default()
+draw.text((text_x, text_y + th + 14), tag, font=tag_font, fill=(180,190,200,220))
+
+# final subtle vignette
+vignette = Image.new("L", (W, H), 0)
+vd = ImageDraw.Draw(vignette)
+for i in range(300):
+    vd.ellipse([ -i, -i, W+i, H+i], outline=255 - int(255 * (i/300.0)))
+vignette = vignette.filter(ImageFilter.GaussianBlur(12))
+img = Image.composite(img, Image.new("RGBA", img.size, (0,0,0,0)), vignette)
+
+# save
+img.convert("RGB").save("naga_sharanya_logo.png", quality=95)
+print("Saved: naga_sharanya_logo.png")
