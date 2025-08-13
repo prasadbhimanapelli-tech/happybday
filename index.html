@@ -1,101 +1,80 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Aman — Text Logo</title>
+  <title>Aman – Gold & Platinum Logo</title>
+  <!-- Cursive font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
   <style>
-    :root {
-      /* Tweak these to change the gradient */
-      --c1: #4f46e5; /* indigo */
-      --c2: #06b6d4; /* cyan */
-      --bg: #0b0b12; /* page background */
-      --fg: #ffffff; /* fallback text color */
+    :root{
+      /* Metallic palette */
+      --gold-1:#d4af37; /* classic gold */
+      --gold-2:#f6e27a; /* light gold */
+      --gold-3:#b8860b; /* deep gold */
+      --plat-1:#e5e4e2; /* platinum */
+      --plat-2:#cdd2d7; /* cool highlight */
+      --plat-3:#aeb6bf; /* cool shadow */
+      --bg:#0b0c10;      /* subtle vignette base */
     }
 
     * { box-sizing: border-box; }
-    html, body {
-      height: 100%;
-      margin: 0;
-      background: radial-gradient(1200px 600px at 70% 20%, #111422, var(--bg));
-      color: var(--fg);
-      font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      display:grid;
+      place-items:center;
+      /* Gold → Platinum background with a gentle metallic sheen */
+      background:
+        radial-gradient(1100px 700px at 20% 20%, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 60%),
+        radial-gradient(900px 600px at 80% 80%, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 60%),
+        linear-gradient(115deg, var(--gold-1) 0%, var(--gold-2) 28%, var(--plat-1) 62%, var(--plat-3) 100%),
+        radial-gradient(100% 100% at 50% 50%, rgba(0,0,0,.25) 0%, rgba(0,0,0,.5) 100%);
+      background-blend-mode: screen, screen, normal, multiply;
+      min-height:100dvh;
     }
 
-    .wrap {
-      min-height: 100%;
-      display: grid;
-      place-items: center;
-      padding: 4rem 2rem;
-    }
-
-    .logo {
-      font-weight: 900;
-      font-style: normal;
-      letter-spacing: 0.06em;
-      font-size: clamp(3rem, 10vw, 9rem);
-      line-height: 1;
-      /* Gradient text */
-      background: linear-gradient(90deg, var(--c1), var(--c2));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      /* Depth */
-      text-shadow: 0 8px 24px rgba(0,0,0,0.35);
-      /* Subtle entrance */
-      transform: translateY(8px);
-      opacity: 0;
-      animation: pop 900ms cubic-bezier(.2,.8,.2,1) 120ms forwards;
-    }
-
-    .sparkle {
+    .logo-wrap{
+      padding: clamp(16px, 3vw, 40px);
+      border-radius: 28px;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      box-shadow: 0 30px 80px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.25);
       position: relative;
-      display: inline-block;
-      isolation: isolate; /* so the shine stays within text */
+      isolation: isolate;
     }
 
-    .sparkle::after {
+    /* Subtle moving highlight across the logo wrapper */
+    .logo-wrap::after{
       content: "";
       position: absolute;
-      inset: 0;
-      background: linear-gradient(120deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%);
+      inset: -2px;
+      border-radius: 30px;
+      background: linear-gradient(135deg, rgba(255,255,255,.15), transparent 40%, transparent 60%, rgba(255,255,255,.1));
       mix-blend-mode: overlay;
-      transform: translateX(-120%);
-      animation: shine 2.2s ease-in-out 420ms both; /* runs once */
+      pointer-events:none;
+      animation: shimmer 6s linear infinite;
+      mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+      -webkit-mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+      padding: 2px; /* creates a glowing edge */
     }
 
-    @keyframes shine {
-      to { transform: translateX(120%); }
+    @keyframes shimmer{
+      0%{ transform: translateX(-10%) translateY(-10%); opacity:.85; }
+      50%{ transform: translateX(10%) translateY(10%); opacity:.4; }
+      100%{ transform: translateX(-10%) translateY(-10%); opacity:.85; }
     }
 
-    @keyframes pop {
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    /* Optional small tagline underneath */
-    .tagline {
-      margin-top: 1rem;
-      font-size: clamp(.9rem, 2.6vw, 1.1rem);
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      opacity: .7;
-    }
-
-    /* Accessibility: prefers-reduced-motion */
-    @media (prefers-reduced-motion: reduce) {
-      .logo { animation: none; opacity: 1; transform: none; }
-      .sparkle::after { animation: none; display: none; }
-    }
-  </style>
-</head>
-<body>
-  <main class="wrap" aria-label="Aman logo">
-    <h1 class="logo sparkle" title="Aman">Aman</h1>
-    <!-- Optional: add or edit the tagline text below, or remove the <p> entirely -->
-    <!-- <p class="tagline">Since 2025</p> -->
-  </main>
-</body>
-</html>
+    .logo{
+      font-family: 'Great Vibes', cursive;
+      font-size: clamp(64px, 14vw, 220px);
+      line-height: 1;
+      letter-spacing: .04em;
+      margin: 0;
+      /* Gold gradient fill on the text */
+      background: linear-gradient(180deg, #ffffff 0%, var(--gold-2) 20%, var(--gold-1) 45%, var(--gold-3) 65%, #fff8d2 85%, #ffffff 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      co
